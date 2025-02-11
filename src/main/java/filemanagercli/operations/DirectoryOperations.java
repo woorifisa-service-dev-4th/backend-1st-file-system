@@ -16,12 +16,18 @@ public class DirectoryOperations {
         this.vfs = vfs;
     }
 
-    public void createDirectory(String path) throws FileSystemException {
-        if (vfs.exists(path)) {
-            throw new FileSystemException("Directory already exists: " + path);
-        }
-        vfs.addFile(path, new VirtualDirectory(path));
-    }
+    // public void createDirectory(String path) throws FileSystemException {
+    //     if (vfs.exists(path)) {
+    //         throw new FileSystemException("Directory already exists: " + path);
+    //     }
+        
+    //     vfs.addFile(path, new VirtualDirectory(path));
+    
+    //     // ✅ 디버깅 로그 추가
+    //     System.out.println("[DEBUG] Directory created: " + path);
+    //     System.out.println("[DEBUG] Current files: " + vfs.getFiles().keySet());
+    // }
+
 
     public void removeDirectory(String path) throws FileSystemException {
         if (!vfs.exists(path)) {
@@ -39,14 +45,35 @@ public class DirectoryOperations {
     }
 
     public void changeDirectory(String path) throws FileSystemException {
+        if (path.equals("..")) { // ✅ 부모 디렉토리로 이동
+            String currentPath = vfs.getCurrentPath();
+            if (currentPath.equals("/")) {
+                throw new FileSystemException("Already at root directory.");
+            }
+    
+            int lastSlash = currentPath.lastIndexOf('/');
+            String parentPath = (lastSlash <= 0) ? "/" : currentPath.substring(0, lastSlash);
+            vfs.setCurrentPath(parentPath);
+            return;
+        }
+    
+        // ✅ 상대 경로 변환
+        if (!path.startsWith("/")) {
+            path = vfs.getCurrentPath() + (vfs.getCurrentPath().equals("/") ? "" : "/") + path;
+        }
+    
         if (!vfs.exists(path)) {
             throw new FileSystemException("No such directory: " + path);
         }
         if (!vfs.getFile(path).isDirectory()) {
             throw new FileSystemException("Not a directory: " + path);
         }
+    
         vfs.setCurrentPath(path);
     }
+    
+    
+    
 
     public void printCurrentDirectory() {
         System.out.println(vfs.getCurrentPath());
@@ -89,10 +116,10 @@ public class DirectoryOperations {
      */
     public void listFiles(String[] args) {
         String currentPath = vfs.getCurrentPath();
-        boolean longFormat = false;  // -l 옵션
-        boolean showHidden = false;  // -a 옵션
-        boolean recursive = false;   // -R 옵션
-
+        boolean longFormat = false;  // ✅ `-l` 옵션 (파일 정보 상세 출력)
+        boolean showHidden = false;  // ✅ `-a` 옵션 (숨김 파일 포함)
+        boolean recursive = false;   // ✅ `-R` 옵션 (재귀적 출력)
+    
         for (String arg : args) {
             switch (arg) {
                 case "-l":
@@ -106,41 +133,45 @@ public class DirectoryOperations {
                     break;
             }
         }
-
-        List<String> files = vfs.listFiles(currentPath);
-
-        if (files.isEmpty()) {
+    
+        // ✅ 현재 디렉토리의 파일 목록 가져오기
+        List<VirtualFile> fileList = vfs.getDirectoryContents(currentPath);
+    
+        if (fileList.isEmpty()) {
             System.out.println("Directory is empty.");
             return;
         }
-
-        for (String file : files) {
-            if (!showHidden && file.startsWith(".")) {
-                continue; // 숨김 파일 제외
+    
+        for (VirtualFile file : fileList) {
+            String fileName = file.getPath().substring(currentPath.length() + (currentPath.equals("/") ? 0 : 1));
+    
+            if (!showHidden && fileName.startsWith(".")) {
+                continue; // ✅ 숨김 파일 제외
             }
-            if (longFormat) {
+    
+            if (longFormat) { // ✅ `-l` 옵션 적용
                 System.out.printf("%-10s %-8s %-8s %10d %s\n",
-                        vfs.getFilePermissions(file),
-                        vfs.getFile(file),
-                        vfs.getFile(file),
-                        vfs.getFile(file),
-                        file);
+                        vfs.getFilePermissions(file.getPath()),
+                        vfs.getFileOwner(file.getPath()),
+                        vfs.getFileGroup(file.getPath()),
+                        vfs.getFileSize(file.getPath()),
+                        fileName);
             } else {
-                System.out.println(file);
+                System.out.println(fileName);
             }
         }
-
+    
+        // ✅ `-R` 옵션: 하위 디렉토리까지 재귀적으로 출력
         if (recursive) {
-            System.out.println("\nRecursive listing:");
-            for (String file : files) {
-                if (vfs.isDirectory(file)) {
-                    System.out.println("\n" + file + "/");
-                    listFiles(new String[]{"-l", "-a"});
+            for (VirtualFile file : fileList) {
+                if (file.isDirectory()) {
+                    System.out.println("\n" + file.getPath() + "/");
+                    listFiles(new String[]{"-l", "-a"}); // ✅ 재귀 호출
                 }
             }
         }
     }
-
+    
     /**
      * 디렉토리 생성 (mkdir -p 지원)
      */
@@ -149,19 +180,33 @@ public class DirectoryOperations {
             throw new FileSystemException("Error: Directory already exists: " + path);
         }
 
+        String currentPath = vfs.getCurrentPath(); // ✅ 현재 경로 가져오기
+
+        if (!path.startsWith("/")) {
+            path = currentPath + (currentPath.equals("/") ? "" : "/") + path; // ✅ 상대 경로 변환
+        }
+
         if (createParents) {
             String[] parts = path.split("/");
-            StringBuilder parentPath = new StringBuilder();
+            StringBuilder parentPath = new StringBuilder("/");
+
             for (String part : parts) {
                 if (part.isEmpty()) continue;
-                parentPath.append("/").append(part);
+                if (!parentPath.toString().equals("/")) {
+                    parentPath.append("/");
+                }
+                parentPath.append(part);
+
                 if (!vfs.exists(parentPath.toString())) {
                     vfs.addFile(parentPath.toString(), new VirtualDirectory(parentPath.toString()));
+                    System.out.println("[DEBUG] Created directory: " + parentPath);
                 }
             }
         } else {
             vfs.addFile(path, new VirtualDirectory(path));
+            System.out.println("[DEBUG] Created directory: " + path);
         }
     }
+
 
 }
