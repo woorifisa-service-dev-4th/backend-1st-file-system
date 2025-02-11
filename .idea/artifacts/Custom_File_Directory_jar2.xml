@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="Custom_File_Directory:jar2">
+    <output-path>$PROJECT_DIR$/../export_jar</output-path>
+    <root id="archive" name="Custom_File_Directory.jar">
+      <element id="module-output" name="Custom_File_Directory" />
+    </root>
+  </artifact>
+</component>
