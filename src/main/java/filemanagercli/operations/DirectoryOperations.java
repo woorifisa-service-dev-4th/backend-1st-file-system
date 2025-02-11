@@ -116,9 +116,9 @@ public class DirectoryOperations {
      */
     public void listFiles(String[] args) {
         String currentPath = vfs.getCurrentPath();
-        boolean longFormat = false;  // ✅ `-l` 옵션 (파일 정보 상세 출력)
-        boolean showHidden = false;  // ✅ `-a` 옵션 (숨김 파일 포함)
-        boolean recursive = false;   // ✅ `-R` 옵션 (재귀적 출력)
+        boolean longFormat = false;
+        boolean showHidden = false;
+        boolean recursive = false;
     
         for (String arg : args) {
             switch (arg) {
@@ -134,8 +134,8 @@ public class DirectoryOperations {
             }
         }
     
-        // ✅ 현재 디렉토리의 파일 목록 가져오기
         List<VirtualFile> fileList = vfs.getDirectoryContents(currentPath);
+        // System.out.println("[DEBUG] Directory Contents of " + currentPath + ": " + fileList.size() + " items");
     
         if (fileList.isEmpty()) {
             System.out.println("Directory is empty.");
@@ -146,10 +146,12 @@ public class DirectoryOperations {
             String fileName = file.getPath().substring(currentPath.length() + (currentPath.equals("/") ? 0 : 1));
     
             if (!showHidden && fileName.startsWith(".")) {
-                continue; // ✅ 숨김 파일 제외
+                continue;
             }
     
-            if (longFormat) { // ✅ `-l` 옵션 적용
+            // System.out.println("[DEBUG] Listing: " + file.getPath());
+    
+            if (longFormat) {
                 System.out.printf("%-10s %-8s %-8s %10d %s\n",
                         vfs.getFilePermissions(file.getPath()),
                         vfs.getFileOwner(file.getPath()),
@@ -160,17 +162,8 @@ public class DirectoryOperations {
                 System.out.println(fileName);
             }
         }
-    
-        // ✅ `-R` 옵션: 하위 디렉토리까지 재귀적으로 출력
-        if (recursive) {
-            for (VirtualFile file : fileList) {
-                if (file.isDirectory()) {
-                    System.out.println("\n" + file.getPath() + "/");
-                    listFiles(new String[]{"-l", "-a"}); // ✅ 재귀 호출
-                }
-            }
-        }
     }
+    
     
     /**
      * 디렉토리 생성 (mkdir -p 지원)
@@ -199,13 +192,14 @@ public class DirectoryOperations {
 
                 if (!vfs.exists(parentPath.toString())) {
                     vfs.addFile(parentPath.toString(), new VirtualDirectory(parentPath.toString()));
-                    System.out.println("[DEBUG] Created directory: " + parentPath);
+                    // System.out.println("[DEBUG] Created directory: " + parentPath);
                 }
             }
         } else {
             vfs.addFile(path, new VirtualDirectory(path));
-            System.out.println("[DEBUG] Created directory: " + path);
+            // System.out.println("[DEBUG] Created directory: " + path);
         }
+        // vfs.printDebugFileSystem();
     }
 
 

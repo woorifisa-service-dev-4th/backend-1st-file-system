@@ -16,7 +16,10 @@ public class VirtualDirectory extends VirtualFile {
     }
 
     public void addFile(VirtualFile file) {
-        children.add(file);
+        if (!children.contains(file)) {  // ✅ 중복 방지
+            children.add(file);
+            // System.out.println("[DEBUG] Added to VirtualDirectory: " + file.getPath() + " under " + getPath());
+        }
     }
 
     public void removeFile(VirtualFile file) {
@@ -24,6 +27,7 @@ public class VirtualDirectory extends VirtualFile {
     }
 
     public List<VirtualFile> getChildren() {
+        // System.out.println("[DEBUG] VirtualDirectory Children of " + getPath() + ": " + children.size() + " items");
         return Collections.unmodifiableList(children);
     }
 }

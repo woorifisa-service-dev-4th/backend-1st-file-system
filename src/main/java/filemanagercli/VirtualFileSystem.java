@@ -23,6 +23,12 @@ public class VirtualFileSystem {
         this.fileOwners = new HashMap<>();
         this.fileGroups = new HashMap<>();
         initializeRootDirectory();
+        initializeProjectStructure();
+    }
+
+    private void initializeProjectStructure() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'initializeProjectStructure'");
     }
 
     private void initializeRootDirectory() {
@@ -36,27 +42,24 @@ public class VirtualFileSystem {
         return files.containsKey(path);
     }
 
-    /**
-     * 파일 또는 디렉토리 추가
-     */
     public void addFile(String path, VirtualFile file) {
         files.put(path, file);
-
-        // ✅ 부모 디렉토리에 추가 (디렉토리 구조 유지)
+        // System.out.println("[DEBUG] Added file: " + path);
+    
+        // ✅ 부모 디렉토리에 추가 (부모 디렉토리도 존재하는지 확인)
         int lastSlash = path.lastIndexOf('/');
-        if (lastSlash > 0) {
-            String parentPath = path.substring(0, lastSlash);
+        if (lastSlash >= 0) {
+            String parentPath = (lastSlash == 0) ? "/" : path.substring(0, lastSlash);
+    
             if (files.containsKey(parentPath) && files.get(parentPath) instanceof VirtualDirectory) {
-                VirtualDirectory parent = (VirtualDirectory) files.get(parentPath);
-                parent.addFile(file);
-                System.out.println("[DEBUG] Added " + path + " to " + parentPath);
+                VirtualDirectory parentDir = (VirtualDirectory) files.get(parentPath);
+                parentDir.addFile(file);
+                // System.out.println("[DEBUG] Added to parent: " + parentPath + " → " + path);
             } else {
-                System.out.println("[DEBUG] Parent directory not found for: " + path);
+                // System.out.println("[DEBUG] Parent directory not found for: " + path);
             }
         }
     }
-
-
 
 
     public void deleteFile(String path) {
@@ -71,19 +74,30 @@ public class VirtualFileSystem {
      * 특정 디렉토리 내 파일 목록 조회 (ls 명령어)
      */
     public List<String> listFiles(String directory) {
-        if (!files.containsKey(directory) || !files.get(directory).isDirectory()) {
+        if (!files.containsKey(directory) || !(files.get(directory) instanceof VirtualDirectory)) {
             return Collections.emptyList();
         }
 
         VirtualDirectory dir = (VirtualDirectory) files.get(directory);
 
-        // ✅ 디렉토리 내 children 목록을 가져와 반환
+        // ✅ 부모 디렉토리의 `children` 목록을 가져와 반환하도록 수정
         return dir.getChildren().stream()
                 .map(VirtualFile::getPath)
-                .map(path -> path.substring(directory.length() + (directory.equals("/") ? 0 : 1)))
+                .map(path -> path.replace(directory + "/", "")) // 상대경로 변환
                 .sorted()
                 .toList();
     }
+
+    public void printDebugFileSystem() {
+        // System.out.println("[DEBUG] File System Structure:");
+        for (String path : files.keySet()) {
+            VirtualFile file = files.get(path);
+            System.out.printf(" - Path: %s, Type: %s\n",
+                    path, (file.isDirectory() ? "Directory" : "File"));
+        }
+    }
+    
+
 
 
 
@@ -208,15 +222,20 @@ public class VirtualFileSystem {
     }
 
 
-    /**
-     * 특정 디렉토리의 파일 및 폴더 목록 반환
-     */
     public List<VirtualFile> getDirectoryContents(String directory) {
         if (!files.containsKey(directory) || !files.get(directory).isDirectory()) {
+            // System.out.println("[DEBUG] getDirectoryContents: Directory not found: " + directory);
             return Collections.emptyList();
         }
-
+    
         VirtualDirectory dir = (VirtualDirectory) files.get(directory);
-        return new ArrayList<>(dir.getChildren());
+        List<VirtualFile> contents = new ArrayList<>(dir.getChildren());
+    
+        // System.out.println("[DEBUG] getDirectoryContents: " + directory + " → " + contents.size() + " items found");
+        for (VirtualFile file : contents) {
+            System.out.println("  - " + file.getPath());
+        }
+    
+        return contents;
     }
 }
