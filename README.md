@@ -38,8 +38,8 @@
 ```plaintext
 /Users/user $ mv test.txt workspace
 파일이 workspace 폴더로 이동되었습니다.
-/Users/user $ non-existing.txt workspace
-오류: 파일 또는 폴더를 찾을 수 없습니다.
+/Users/user $ non-existing.txt workspace
+오류: 파일 또는 폴더를 찾을 수 없습니다.
 ```
 
 ### ✅ 실행 방법
