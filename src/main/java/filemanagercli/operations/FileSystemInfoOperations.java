@@ -18,24 +18,24 @@ public class FileSystemInfoOperations {
      */
     public void showDiskUsage() {
         int totalFiles = vfs.getFiles().size();
-        System.out.println("Disk Usage:");
-        System.out.println("Total Files: " + totalFiles);
+        long totalSize = vfs.getTotalFileSize();
+        System.out.println("Filesystem      Size     Used     Available");
+        System.out.printf("VirtualFS       %d KB   %d KB    %d KB\n",
+                totalSize / 1024, totalSize / 2048, (totalSize / 1024) - (totalSize / 2048));
     }
 
     /**
-     * 특정 디렉토리의 크기 확인 (du 명령어)
+     * 특정 디렉토리의 크기 확인 (du -sh)
      */
     public void showDirectorySize(String path) {
         if (!vfs.exists(path)) {
             System.out.println("Error: Directory not found: " + path);
             return;
         }
-        int fileCount = 0;
-        for (String key : vfs.getFiles().keySet()) {
-            if (key.startsWith(path)) {
-                fileCount++;
-            }
-        }
-        System.out.println("Size of " + path + ": " + fileCount + " files");
+
+        long totalSize = vfs.getDirectorySize(path);
+        System.out.printf("Size of %s: %d KB\n", path, totalSize / 1024);
     }
+
+
 }

@@ -117,4 +117,43 @@ public class VirtualFileSystem {
     public Map<String, VirtualFile> getFiles() {
         return files;
     }
+
+    public Object getFilePermissions(String file) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getFilePermissions'");
+    }
+
+    public boolean isDirectory(String file) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'isDirectory'");
+    }
+
+    /**
+     * 전체 파일 시스템 크기 반환
+     */
+    public long getTotalFileSize() {
+        return fileContents.values().stream().mapToLong(String::length).sum();
+    }
+
+
+    /**
+     * 특정 디렉토리 크기 반환
+     */
+    public long getDirectorySize(String path) {
+        if (!files.containsKey(path) || !files.get(path).isDirectory()) {
+            return 0;
+        }
+
+        return files.keySet().stream()
+                .filter(p -> p.startsWith(path))
+                .mapToLong(this::getFileSize)
+                .sum();
+    }
+
+    /**
+     * 특정 파일 크기 반환
+     */
+    public long getFileSize(String path) {
+        return fileContents.getOrDefault(path, "").length();
+    }
 }

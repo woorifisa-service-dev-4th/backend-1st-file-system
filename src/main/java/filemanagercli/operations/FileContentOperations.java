@@ -1,5 +1,7 @@
 package filemanagercli.operations;
 
+import java.util.Scanner;
+
 import filemanagercli.VirtualFileSystem;
 import filemanagercli.exceptions.FileSystemException;
 
@@ -57,5 +59,33 @@ public class FileContentOperations {
 
         vfs.updateFileContent(filePath, newContent);
         System.out.println("File updated: " + filePath);
+    }
+    /**
+     * 파일 편집 기능 (nano 명령어)
+     */
+    public void editFileInteractive(String filePath) throws FileSystemException {
+        if (!vfs.exists(filePath)) {
+            throw new FileSystemException("File not found: " + filePath);
+        }
+        if (vfs.getFile(filePath).isDirectory()) {
+            throw new FileSystemException("Cannot edit a directory: " + filePath);
+        }
+
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Editing file: " + filePath);
+        System.out.println("Enter content below (type ':wq' to save and exit):");
+
+        StringBuilder newContent = new StringBuilder();
+        while (true) {
+            String line = scanner.nextLine();
+            if (line.equals(":wq")) {
+                break;
+            }
+            newContent.append(line).append("\n");
+        }
+        scanner.close();
+
+        vfs.updateFileContent(filePath, newContent.toString());
+        System.out.println("File saved: " + filePath);
     }
 }
