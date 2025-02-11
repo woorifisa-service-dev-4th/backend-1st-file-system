@@ -16,9 +16,8 @@ public class VirtualDirectory extends VirtualFile {
     }
 
     public void addFile(VirtualFile file) {
-        if (!children.contains(file)) {  // ✅ 중복 방지
+        if (!children.contains(file)) {
             children.add(file);
-            // System.out.println("[DEBUG] Added to VirtualDirectory: " + file.getPath() + " under " + getPath());
         }
     }
 
@@ -26,8 +25,8 @@ public class VirtualDirectory extends VirtualFile {
         children.remove(file);
     }
 
+    // ✅ 원래는 `Collections.unmodifiableList()`를 반환했지만, 변경 가능한 리스트 반환
     public List<VirtualFile> getChildren() {
-        // System.out.println("[DEBUG] VirtualDirectory Children of " + getPath() + ": " + children.size() + " items");
-        return Collections.unmodifiableList(children);
+        return new ArrayList<>(children);
     }
 }

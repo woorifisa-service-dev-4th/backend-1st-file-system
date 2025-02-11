@@ -23,19 +23,79 @@ public class VirtualFileSystem {
         this.fileOwners = new HashMap<>();
         this.fileGroups = new HashMap<>();
         initializeRootDirectory();
-        initializeProjectStructure();
+        initializeProjectStructure(); // ✅ 기본 디렉토리 및 파일 추가
     }
 
-    private void initializeProjectStructure() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'initializeProjectStructure'");
-    }
-
+    /**
+     * 루트 디렉토리 초기화
+     */
     private void initializeRootDirectory() {
         files.put("/", new VirtualDirectory("/"));
         filePermissions.put("/", "drwxr-xr-x");
         fileOwners.put("/", "root");
         fileGroups.put("/", "root");
+    }
+
+    /**
+     * 기본 프로젝트 구조 초기화
+     */
+    private void initializeProjectStructure() {
+        createDirectory("/empty_project");
+        createDirectory("/empty_project/data");
+        createDirectory("/empty_project/src");
+        createDirectory("/empty_project/logs");
+        createDirectory("/empty_project/docs");
+        createDirectory("/empty_project/tests");
+        createDirectory("/empty_project/scripts");
+
+        createFile("/empty_project/data/raw_data.csv", "id,value\n1,100\n2,200");
+        createFile("/empty_project/data/processed_data.json", "{\"id\": 1, \"value\": 100}");
+        createFile("/empty_project/data/config.yaml", "setting: default");
+
+        createFile("/empty_project/src/main.py", "print('Hello, World!')");
+        createFile("/empty_project/src/helper.py", "# Helper functions");
+        createFile("/empty_project/src/analyzer.py", "# Data analyzer");
+        createFile("/empty_project/src/processor.py", "# Data processor");
+
+        createFile("/empty_project/logs/app.log", "Log started...");
+        createFile("/empty_project/logs/error.log", "Error log...");
+
+        createFile("/empty_project/docs/README.md", "# Project README");
+        createFile("/empty_project/docs/requirements.txt", "numpy\npandas");
+        createFile("/empty_project/docs/changelog.md", "Version 1.0 - Initial release");
+
+        createFile("/empty_project/tests/test_main.py", "def test_main(): pass");
+        createFile("/empty_project/tests/test_helper.py", "def test_helper(): pass");
+        createFile("/empty_project/tests/test_analyzer.py", "def test_analyzer(): pass");
+
+        createFile("/empty_project/scripts/setup.sh", "#!/bin/bash\necho 'Setup'");
+        createFile("/empty_project/scripts/run.sh", "#!/bin/bash\necho 'Run'");
+        createFile("/empty_project/scripts/clean.sh", "#!/bin/bash\necho 'Clean'");
+    }
+
+    /**
+     * 디렉토리 추가
+     */
+    private void createDirectory(String path) {
+        if (!files.containsKey(path)) {
+            files.put(path, new VirtualDirectory(path));
+            filePermissions.put(path, "drwxr-xr-x");
+            fileOwners.put(path, "user");
+            fileGroups.put(path, "user");
+        }
+    }
+
+    /**
+     * 파일 추가 및 기본 내용 설정
+     */
+    private void createFile(String path, String content) {
+        if (!files.containsKey(path)) {
+            files.put(path, new VirtualFile(path, false));
+            fileContents.put(path, content);
+            filePermissions.put(path, "-rw-r--r--");
+            fileOwners.put(path, "user");
+            fileGroups.put(path, "user");
+        }
     }
 
     public boolean exists(String path) {
@@ -44,9 +104,8 @@ public class VirtualFileSystem {
 
     public void addFile(String path, VirtualFile file) {
         files.put(path, file);
-        // System.out.println("[DEBUG] Added file: " + path);
+        System.out.println("[DEBUG] Added file: " + path);
     
-        // ✅ 부모 디렉토리에 추가 (부모 디렉토리도 존재하는지 확인)
         int lastSlash = path.lastIndexOf('/');
         if (lastSlash >= 0) {
             String parentPath = (lastSlash == 0) ? "/" : path.substring(0, lastSlash);
@@ -54,13 +113,13 @@ public class VirtualFileSystem {
             if (files.containsKey(parentPath) && files.get(parentPath) instanceof VirtualDirectory) {
                 VirtualDirectory parentDir = (VirtualDirectory) files.get(parentPath);
                 parentDir.addFile(file);
-                // System.out.println("[DEBUG] Added to parent: " + parentPath + " → " + path);
+                System.out.println("[DEBUG] Added to VirtualDirectory: " + path + " under " + parentPath);
             } else {
-                // System.out.println("[DEBUG] Parent directory not found for: " + path);
+                System.out.println("[DEBUG] Parent directory not found for: " + path);
             }
         }
     }
-
+    
 
     public void deleteFile(String path) {
         files.remove(path);
@@ -70,9 +129,6 @@ public class VirtualFileSystem {
         fileGroups.remove(path);
     }
 
-    /**
-     * 특정 디렉토리 내 파일 목록 조회 (ls 명령어)
-     */
     public List<String> listFiles(String directory) {
         if (!files.containsKey(directory) || !(files.get(directory) instanceof VirtualDirectory)) {
             return Collections.emptyList();
@@ -80,26 +136,12 @@ public class VirtualFileSystem {
 
         VirtualDirectory dir = (VirtualDirectory) files.get(directory);
 
-        // ✅ 부모 디렉토리의 `children` 목록을 가져와 반환하도록 수정
         return dir.getChildren().stream()
                 .map(VirtualFile::getPath)
-                .map(path -> path.replace(directory + "/", "")) // 상대경로 변환
+                .map(path -> path.replace(directory + "/", ""))
                 .sorted()
                 .toList();
     }
-
-    public void printDebugFileSystem() {
-        // System.out.println("[DEBUG] File System Structure:");
-        for (String path : files.keySet()) {
-            VirtualFile file = files.get(path);
-            System.out.printf(" - Path: %s, Type: %s\n",
-                    path, (file.isDirectory() ? "Directory" : "File"));
-        }
-    }
-    
-
-
-
 
     public VirtualFile getFile(String path) {
         return files.get(path);
@@ -137,7 +179,7 @@ public class VirtualFileSystem {
 
     public void moveToParentDirectory() {
         if (currentPath.equals("/")) {
-            System.out.println("Error: Already at root directory.");
+            System.out.println("Warning: Already at root directory.");
             return;
         }
         int lastSlash = currentPath.lastIndexOf('/');
@@ -221,21 +263,38 @@ public class VirtualFileSystem {
         fileGroups.put(path, group);
     }
 
-
+    // public List<VirtualFile> getDirectoryContents(String directory) {
+    //     if (!files.containsKey(directory) || !files.get(directory).isDirectory()) {
+    //         // System.out.println("[DEBUG] getDirectoryContents: Directory not found: " + directory);
+    //         return Collections.emptyList();
+    //     }
+    
+    //     VirtualDirectory dir = (VirtualDirectory) files.get(directory);
+    //     List<VirtualFile> contents = new ArrayList<>(dir.getChildren());
+    
+    //     // System.out.println("[DEBUG] getDirectoryContents: " + directory + " → " + contents.size() + " items found");
+    //     for (VirtualFile file : contents) {
+    //         System.out.println("  - " + file.getPath());
+    //     }
+    
+    //     return contents;
+    // }
     public List<VirtualFile> getDirectoryContents(String directory) {
-        if (!files.containsKey(directory) || !files.get(directory).isDirectory()) {
-            // System.out.println("[DEBUG] getDirectoryContents: Directory not found: " + directory);
+        if (!files.containsKey(directory) || !(files.get(directory) instanceof VirtualDirectory)) {
+            System.out.println("[DEBUG] getDirectoryContents: Directory not found or not a directory: " + directory);
             return Collections.emptyList();
         }
     
         VirtualDirectory dir = (VirtualDirectory) files.get(directory);
         List<VirtualFile> contents = new ArrayList<>(dir.getChildren());
     
-        // System.out.println("[DEBUG] getDirectoryContents: " + directory + " → " + contents.size() + " items found");
+        System.out.println("[DEBUG] getDirectoryContents: " + directory + " → " + contents.size() + " items found");
         for (VirtualFile file : contents) {
-            System.out.println("  - " + file.getPath());
+            System.out.println("  - " + file.getPath() + " (Type: " + (file.isDirectory() ? "Directory" : "File") + ")");
         }
     
         return contents;
     }
+    
+    
 }

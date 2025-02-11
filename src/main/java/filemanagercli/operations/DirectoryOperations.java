@@ -134,22 +134,24 @@ public class DirectoryOperations {
             }
         }
     
+        System.out.println("[DEBUG] Listing files in: " + currentPath);
+    
         List<VirtualFile> fileList = vfs.getDirectoryContents(currentPath);
-        // System.out.println("[DEBUG] Directory Contents of " + currentPath + ": " + fileList.size() + " items");
     
         if (fileList.isEmpty()) {
+            System.out.println("[DEBUG] Directory Contents of " + currentPath + ": 0 items");
             System.out.println("Directory is empty.");
             return;
         }
     
+        System.out.println("[DEBUG] Directory Contents of " + currentPath + ": " + fileList.size() + " items");
         for (VirtualFile file : fileList) {
             String fileName = file.getPath().substring(currentPath.length() + (currentPath.equals("/") ? 0 : 1));
-    
+            System.out.println("[DEBUG] Found file: " + file.getPath() + " → Display as: " + fileName);
+            
             if (!showHidden && fileName.startsWith(".")) {
                 continue;
             }
-    
-            // System.out.println("[DEBUG] Listing: " + file.getPath());
     
             if (longFormat) {
                 System.out.printf("%-10s %-8s %-8s %10d %s\n",
@@ -160,6 +162,15 @@ public class DirectoryOperations {
                         fileName);
             } else {
                 System.out.println(fileName);
+            }
+        }
+    
+        if (recursive) {
+            for (VirtualFile file : fileList) {
+                if (file.isDirectory()) {
+                    System.out.println("\n" + file.getPath() + "/");
+                    listFiles(new String[]{"-l", "-a"});
+                }
             }
         }
     }
