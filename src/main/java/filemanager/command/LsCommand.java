@@ -4,6 +4,7 @@ import filemanager.FileManager;
 import filemanager.utils.PathUtils;
 import java.io.File;
 import java.util.Arrays;
+import java.util.Comparator;
 
 public class LsCommand implements Command {
     @Override
@@ -34,7 +35,7 @@ public class LsCommand implements Command {
             return;
         }
 
-        Arrays.sort(files);
+        Arrays.sort(files, Comparator.comparing(f -> f.getName().toLowerCase()));
 
         for (File file : files) {
             if (file.isDirectory()) {
