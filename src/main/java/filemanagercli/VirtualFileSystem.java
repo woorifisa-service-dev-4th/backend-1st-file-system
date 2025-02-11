@@ -3,99 +3,40 @@ package filemanagercli;
 import filemanagercli.models.VirtualFile;
 import filemanagercli.models.VirtualDirectory;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * 가상의 파일 시스템을 관리하는 클래스
  */
 public class VirtualFileSystem {
     private final Map<String, VirtualFile> files;
-    private final Map<String, String> filePermissions;
-    private final Map<String, String> fileOwners;
-    private final Map<String, String> fileGroups;
-    private final Map<String, String> fileContents;
-    private String currentPath = "/empty_project";
+    private final Map<String, String> fileContents; // 파일 내용 저장
+    private String currentPath = "/";
 
     public VirtualFileSystem() {
         this.files = new HashMap<>();
-        this.filePermissions = new HashMap<>();
-        this.fileOwners = new HashMap<>();
-        this.fileGroups = new HashMap<>();
         this.fileContents = new HashMap<>();
-        initializeDummyData();
+        initializeRootDirectory();
     }
 
-    private void initializeDummyData() {
-        addFile("/empty_project", true, "drwxr-xr-x", "root", "root", "");
-        addFile("/empty_project/data", true, "drwxr-xr-x", "root", "root", "");
-        addFile("/empty_project/src", true, "drwxr-xr-x", "root", "root", "");
-        addFile("/empty_project/logs", true, "drwxr-xr-x", "root", "root", "");
-        addFile("/empty_project/docs", true, "drwxr-xr-x", "root", "root", "");
-        addFile("/empty_project/tests", true, "drwxr-xr-x", "root", "root", "");
-        addFile("/empty_project/scripts", true, "drwxr-xr-x", "root", "root", "");
-
-        addFile("/empty_project/data/raw_data.csv", false, "-rw-r--r--", "root", "root", "ID,Name,Age\n1,John,30\n2,Jane,28");
-        addFile("/empty_project/data/processed_data.json", false, "-rw-r--r--", "root", "root", "{ \"users\": [{\"id\":1,\"name\":\"John\"},{\"id\":2,\"name\":\"Jane\"}]}");
-        addFile("/empty_project/data/config.yaml", false, "-rw-r--r--", "root", "root", "settings:\n  mode: production\n  debug: false");
-
-        addFile("/empty_project/src/main.py", false, "-rw-r--r--", "root", "root", "print('Hello, World!')");
-        addFile("/empty_project/src/helper.py", false, "-rw-r--r--", "root", "root", "def helper():\n    return 'This is a helper function.'");
-        addFile("/empty_project/src/analyzer.py", false, "-rw-r--r--", "root", "root", "def analyze():\n    return 'Analyzing data...'");
-        addFile("/empty_project/src/processor.py", false, "-rw-r--r--", "root", "root", "def process():\n    return 'Processing data...'");
-
-        addFile("/empty_project/logs/app.log", false, "-rw-r--r--", "root", "root", "INFO: Application started successfully.");
-        addFile("/empty_project/logs/error.log", false, "-rw-r--r--", "root", "root", "ERROR: Something went wrong.");
-
-        addFile("/empty_project/docs/README.md", false, "-rw-r--r--", "root", "root", "# File Manager CLI\nThis is a simple CLI file manager.");
-        addFile("/empty_project/docs/requirements.txt", false, "-rw-r--r--", "root", "root", "jline3\nlog4j");
-        addFile("/empty_project/docs/changelog.md", false, "-rw-r--r--", "root", "root", "## Changelog\n- Initial release.");
-
-        addFile("/empty_project/tests/test_main.py", false, "-rw-r--r--", "root", "root", "def test_main():\n    assert True");
-        addFile("/empty_project/tests/test_helper.py", false, "-rw-r--r--", "root", "root", "def test_helper():\n    assert helper() == 'This is a helper function.'");
-        addFile("/empty_project/tests/test_analyzer.py", false, "-rw-r--r--", "root", "root", "def test_analyzer():\n    assert analyze() == 'Analyzing data...'");
-
-        addFile("/empty_project/scripts/setup.sh", false, "-rwxr-xr-x", "root", "root", "#!/bin/bash\necho 'Setting up...'");
-        addFile("/empty_project/scripts/run.sh", false, "-rwxr-xr-x", "root", "root", "#!/bin/bash\necho 'Running the application...'");
-        addFile("/empty_project/scripts/clean.sh", false, "-rwxr-xr-x", "root", "root", "#!/bin/bash\necho 'Cleaning up...'");
-    }
-
-    public void addFile(String path, boolean isDirectory, String permissions, String owner, String group, String content) {
-        files.put(path, isDirectory ? new VirtualDirectory(path) : new VirtualFile(path, false));
-        filePermissions.put(path, permissions);
-        fileOwners.put(path, owner);
-        fileGroups.put(path, group);
-
-        if (!isDirectory) {
-            fileContents.put(path, content);
-        }
-    }
-
-    public String getFileContent(String path) {
-        return fileContents.getOrDefault(path, "");
+    private void initializeRootDirectory() {
+        files.put("/", new VirtualDirectory("/"));
     }
 
     public boolean exists(String path) {
         return files.containsKey(path);
     }
 
+    public void addFile(String path, VirtualFile file) {
+        files.put(path, file);
+    }
+
     public void deleteFile(String path) {
         files.remove(path);
-        filePermissions.remove(path);
-        fileOwners.remove(path);
-        fileGroups.remove(path);
         fileContents.remove(path);
     }
 
-    public List<String> listFiles(String directory) {
-        if (!files.containsKey(directory) || !files.get(directory).isDirectory()) {
-            return Collections.emptyList();
-        }
-
-        return files.keySet().stream()
-            .filter(path -> path.startsWith(directory) && !path.equals(directory))
-            .map(path -> path.replace(directory + "/", ""))
-            .sorted()
-            .collect(Collectors.toList());
+    public VirtualFile getFile(String path) {
+        return files.get(path);
     }
 
     public String getCurrentPath() {
@@ -110,12 +51,49 @@ public class VirtualFileSystem {
         }
     }
 
-    public Map<String, VirtualFile> getFiles() {
-        return files;
+    /**
+     * 특정 디렉토리 내 파일 목록 조회
+     */
+    public List<String> listFiles(String directory) {
+        if (!files.containsKey(directory) || !files.get(directory).isDirectory()) {
+            return Collections.emptyList();
+        }
+
+        return files.keySet().stream()
+            .filter(path -> path.startsWith(directory) && !path.equals(directory))
+            .map(path -> path.replace(directory + "/", ""))
+            .sorted()
+            .toList();
     }
 
+    /**
+     * 파일 내용 조회
+     */
+    public String getFileContent(String path) {
+        return fileContents.getOrDefault(path, "");
+    }
+
+    /**
+     * 파일 내용 업데이트
+     */
+    public void updateFileContent(String path, String content) {
+        if (files.containsKey(path) && !files.get(path).isDirectory()) {
+            fileContents.put(path, content);
+        }
+    }
+
+    /**
+     * 파일 내용 추가 (echo >>)
+     */
+    public void appendToFile(String path, String content) {
+        fileContents.put(path, fileContents.getOrDefault(path, "") + "\n" + content);
+    }
+
+    /**
+     * 상위 디렉토리 이동 (cd ..)
+     */
     public void moveToParentDirectory() {
-        if (currentPath.equals("/empty_project")) {
+        if (currentPath.equals("/")) {
             System.out.println("Error: Already at root directory.");
             return;
         }
@@ -123,6 +101,9 @@ public class VirtualFileSystem {
         currentPath = currentPath.substring(0, lastSlash);
     }
 
+    /**
+     * 입력된 경로를 현재 경로 기준으로 변환 (절대 경로)
+     */
     public String resolvePath(String path) {
         if (path.startsWith("/")) {
             return path;
@@ -130,4 +111,10 @@ public class VirtualFileSystem {
         return currentPath + "/" + path;
     }
 
+    /**
+     * 전체 파일 시스템 반환
+     */
+    public Map<String, VirtualFile> getFiles() {
+        return files;
+    }
 }

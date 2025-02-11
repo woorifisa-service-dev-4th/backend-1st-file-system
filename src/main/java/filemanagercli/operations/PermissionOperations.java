@@ -5,6 +5,9 @@ import filemanagercli.exceptions.FileSystemException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * 파일 및 디렉토리 권한 관련 기능 (chmod, chown, chgrp)
+ */
 public class PermissionOperations {
     private final VirtualFileSystem vfs;
     private final Map<String, String> filePermissions = new HashMap<>();

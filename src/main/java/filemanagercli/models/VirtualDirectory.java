@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * 가상 디렉토리를 나타내는 클래스
+ */
 public class VirtualDirectory extends VirtualFile {
     private final List<VirtualFile> children;
 
